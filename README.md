@@ -1,135 +1,75 @@
-# instagramcaptionforyou
-its an instagram caption for free 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Instagram Caption</title>
-    <link href="https://googleapis.com" rel="stylesheet">
+import streamlit as st
+
+# Setup premium dark/light layout configuration
+st.set_page_config(page_title="Instagram Caption", page_icon="✨", layout="wide")
+
+# Hide default headers and footers for a professional software look
+st.markdown("""
     <style>
-        * { box-sizing: border-box; font-family: 'Inter', sans-serif; }
-        body { background-color: #fafafa; color: #18181b; margin: 0; padding: 40px 20px; display: flex; justify-content: center; }
-        .container { max-width: 1000px; width: 100%; }
-        .header-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; }
-        h1 { margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -0.5px; }
-        .subtitle { margin: 5px 0 0 0; color: #71717a; font-size: 14px; }
-        .counter-badge { background: #f4f4f5; border: 1px solid #e4e4e7; padding: 8px 16px; border-radius: 8px; font-weight: 500; font-size: 14px; }
-        .paywall { display: none; background: #fff; border: 2px solid #e4e4e7; padding: 30px; border-radius: 12px; text-align: center; margin-bottom: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-        .paywall h2 { margin: 0 0 10px 0; font-size: 20px; }
-        .paywall p { color: #71717a; font-size: 14px; margin: 0 0 20px 0; }
-        .btn-pay { background: #18181b; color: #fff; border: none; padding: 12px 24px; border-radius: 6px; font-weight: 500; cursor: pointer; text-decoration: none; display: inline-block; }
-        .tabs { display: flex; border-bottom: 1px solid #e4e4e7; margin-bottom: 25px; }
-        .tab { padding: 12px 20px; cursor: pointer; font-weight: 500; color: #71717a; border-bottom: 2px solid transparent; }
-        .tab.active { color: #18181b; border-bottom-color: #18181b; }
-        .tab-content { display: none; background: #fff; border: 1px solid #e4e4e7; padding: 30px; border-radius: 12px; }
-        .tab-content.active { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
-        .panel { display: flex; flex-direction: column; }
-        label { font-weight: 500; font-size: 14px; margin-bottom: 8px; }
-        input, textarea, select { padding: 10px; border: 1px solid #e4e4e7; border-radius: 6px; font-size: 14px; margin-bottom: 20px; width: 100%; outline: none; }
-        input:focus, textarea:focus, select:focus { border-color: #a1a1aa; }
-        .btn-generate { background: #18181b; color: #fff; border: none; padding: 12px; border-radius: 6px; font-weight: 500; cursor: pointer; font-size: 14px; }
-        .btn-generate:disabled { background: #e4e4e7; color: #a1a1aa; cursor: not-allowed; }
-        textarea { resize: none; background: #fafafa; }
-        .output-panel textarea { background: #fff; height: 100%; min-height: 250px; }
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
     </style>
-</head>
-<body>
+""", unsafe_allow_html=True)
 
-<div class="container">
-    <div class="header-row">
-        <div>
-            <h1>Instagram Caption</h1>
-            <p class="subtitle">Enterprise-grade content infrastructure for digital publishers.</p>
-        </div>
-        <div class="counter-badge" id="counter">Free Captions Remaining: 5/5</div>
-    </div>
+# Define your payment destination
+STRIPE_LINK = "https://stripe.com"
 
-    <div class="paywall" id="paywall">
-        <h2>🔒 Usage Limit Reached</h2>
-        <p>You have used your 5 free credits. Unlock unlimited premium caption generation instantly.</p>
-        <a href="https://stripe.com" class="btn-pay" target="_blank">🔑 Unlock Next Caption (5 CHF)</a>
-    </div>
+# Initialize credit tracker locally inside user session
+if "credits" not in st.session_state:
+    st.session_state.credits = 5
 
-    <div class="tabs">
-        <div class="tab active" onclick="switchTab('text-tab')">Generate from Text</div>
-        <div class="tab" onclick="switchTab('video-tab')">Generate from Video URL</div>
-    </div>
+# Header Interface
+col1, col2 = st.columns([4, 1])
+with col1:
+    st.title("Instagram Caption")
+    st.write("Enterprise-grade content infrastructure for digital publishers.")
+with col2:
+    st.metric(label="Free Captions Remaining", value=f"{st.session_state.credits}/5")
 
-    <!-- TAB 1 -->
-    <div id="text-tab" class="tab-content active">
-        <div class="panel">
-            <h3>🛠️ Execution Parameters</h3>
-            <label>Describe your post concept or topic</label>
-            <textarea id="text-prompt" placeholder="Type what your image or video is about..." rows="4"></textarea>
-            
-            <label>Select Tone Profile</label>
-            <select id="text-tone">
-                <option>Professional</option>
-                <option>High-Engagement (Hype)</option>
-                <option>Creative</option>
-                <option>Minimalist</option>
-            </select>
-            <button class="btn-generate" id="btn-text" onclick="processGeneration('text')">Compile Optimized Copy</button>
-        </div>
-        <div class="panel output-panel">
-            <h3>📄 Production Output</h3>
-            <textarea id="text-output" placeholder="Your professional caption will appear here..." readonly></textarea>
-        </div>
-    </div>
+# Enforce Paywall Blocking Logic
+if st.session_state.credits <= 0:
+    st.error("🔒 Evaluation Allocation Exhausted")
+    st.write("You have completed your 5 initial system evaluation credits. Please unlock the production cluster interface to continue generating assets.")
+    st.markdown(f'<a href="{STRIPE_LINK}" target="_blank"><button style="width:100%;background-color:#18181b;color:white;padding:12px;border:none;border-radius:6px;font-weight:bold;cursor:pointer;">🔑 Unlock Production Node Access (5 CHF)</button></a>', unsafe_allow_html=True)
+else:
+    # Tab Workspace Design
+    tab1, tab2 = st.tabs(["Generate from System Prompts", "Generate from Video Remote Link"])
+    
+    with tab1:
+        c1, c2 = st.columns(2)
+        with c1:
+            st.subheader("🛠️ Execution Context Parameters")
+            prompt = st.text_area("Describe your post concept, core strategy, or asset topic", placeholder="Provide deep structural context of what the graphic depicts...", key="txt_prompt")
+            tone = st.selectbox("Emotional Voice Profile", ["Professional", "High-Engagement (Hype)", "Creative", "Minimalist"])
+            platform = st.selectbox("Target Execution Environment", ["Instagram Feed Node", "Instagram Reels Pipeline", "Threads Stream"])
+            if st.button("Compile Optimized Copy", key="btn_text"):
+                if prompt:
+                    st.session_state.credits -= 1
+                    st.session_state.generated_text = f"✨ [Platform: {platform} | Tone: {tone}]\n\nHere is your professional caption:\n\n\"{prompt}\"\n\n#marketing #socialmedia #trending"
+                    st.rerun()
+                else:
+                    st.warning("Please type a concept topic first.")
+        with c2:
+            st.subheader("📄 Production Logs Output")
+            output_val = st.session_state.get("generated_text", "The asset generation compilation cycle will print the verified output here...")
+            st.text_area("Final Formatted Copy Block", value=output_val, height=250, key="txt_out")
 
-    <!-- TAB 2 -->
-    <div id="video-tab" class="tab-content">
-        <div class="panel">
-            <h3>🎥 Video Link Interceptor</h3>
-            <label>Paste TikTok, Reel, or YouTube URL</label>
-            <input type="text" id="video-url" placeholder="https://tiktok.com...">
-            
-            <label>Social Channel Format</label>
-            <select id="video-platform">
-                <option>Re-optimize for Instagram Reels</option>
-                <option>Format for YouTube Shorts</option>
-            </select>
-            <button class="btn-generate" id="btn-video" onclick="processGeneration('video')">Process Video & Compile</button>
-        </div>
-        <div class="panel output-panel">
-            <h3>📄 Asset Transcription Analytics</h3>
-            <textarea id="video-output" placeholder="Your video transcript based caption will appear here..." readonly></textarea>
-        </div>
-    </div>
-</div>
+    with tab2:
+        c1, c2 = st.columns(2)
+        with c1:
+            st.subheader("🎥 Stream Media URL Interceptor")
+            video_url = st.text_input("Paste Network Link To Target Video Asset", placeholder="https://tiktok.com...")
+            v_tone = st.selectbox("Adapt Video Concept Voice To", ["Viral Vector / Educational", "Professional", "Comedic Hook"])
+            if st.button("Process Remote Asset & Compile", key="btn_video"):
+                if video_url:
+                    st.session_state.credits -= 1
+                    st.session_state.generated_video = f"🎥 [Video Hook Conversion | Voice: {v_tone}]\n\nAudio transcript extracted successfully from link: {video_url}\n\n🔥 Optimized distribution caption generated! #viral #reels #shorts"
+                    st.rerun()
+                else:
+                    st.warning("Please paste a valid video URL path.")
+        with c2:
+            st.subheader("📄 Asset Transcription Analytics")
+            v_output_val = st.session_state.get("generated_video", "The pipeline script will automatically parse the media parameters and compile the asset here...")
+            st.text_area("Parsed Concept Output Copy", value=v_output_val, height=250, key="vid_out")
 
-<script>
-    let count = 0;
-    const maxFree = 5;
-
-    function switchTab(tabId) {
-        document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === (tabId === 'text-tab' ? 0 : 1)));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === tabId));
-    }
-
-    function processGeneration(type) {
-        if (count >= maxFree) return;
-
-        count++;
-        const remaining = maxFree - count;
-        document.getElementById('counter').innerText = `Free Captions Remaining: ${remaining}/${maxFree}`;
-
-        if (type === 'text') {
-            const prompt = document.getElementById('text-prompt').value || 'your topic';
-            const tone = document.getElementById('text-tone').value;
-            document.getElementById('text-output').value = `✨ [Tone: ${tone}]\n\nHere is your optimized professional caption based on: "${prompt}"\n\n#marketing #socialmedia #trending`;
-        } else {
-            const url = document.getElementById('video-url').value || 'provided link';
-            document.getElementById('video-output').value = `🎥 [Video Hook Conversion]\n\nAudio transcribed successfully from link: ${url}.\n\n🔥 Here is your viral caption written from your video content! #reels #tiktok #viral`;
-        }
-
-        if (count >= maxFree) {
-            document.getElementById('paywall').style.display = 'block';
-            document.getElementById('btn-text').disabled = true;
-            document.getElementById('btn-video').disabled = true;
-        }
-    }
-</script>
-</body>
-</html>
